@@ -14,7 +14,7 @@ st.set_page_config(page_title="TitraSmart - Kalkulator & Simulasi Titrasi", page
 # ==========================================
 st.sidebar.title("🧪 TitraSmart")
 st.sidebar.markdown("*Asisten Pintar Kimia Analisis*")
-st.sidebar.hr()
+st.sidebar.markdown("---")
 menu = st.sidebar.radio(
     "Pilih Menu:",
     ["Halaman Utama", "Kalkulator Titrasi", "Simulasi Indikator", "Database Reaksi", "Penentuan Kadar (%)"]
