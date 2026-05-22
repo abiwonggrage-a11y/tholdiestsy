@@ -64,7 +64,7 @@ st.write("---")
 # ==========================================
 with st.sidebar:
     st.header("📌 Menu Navigasi")
-    menu_utama = st.sidebar.radio(
+    menu_utama = st.radio(
         "Pilih Halaman:",
         ["🏠 Halaman Utama", "🧮 Kalkulator Hitung", "🎨 Simulasi Indikator"]
     )
@@ -88,7 +88,7 @@ if menu_utama == "🏠 Halaman Utama":
         st.info("**Asidimetri & Alkalimetri:** Standarisasi NaOH, Standarisasi HCl, dan Kadar Campuran Warder.")
         st.info("**Permanganometri:** Standarisasi KMnO₄ dan Kadar Besi (Fe).")
     with col2:
-        st.info("**Iodometri:** Standarisasi Natrium Tiosulfat dan Kadar Klor Aktif (Cl).")
+        st.info("**Iodometri:** Standarisasi Natrium Tiosulfat dan Kadar Klor Aktif (Cl₂).")
         st.info("**Kompleksiometri:** Standarisasi EDTA dan Kesadahan Jumlah air.")
 
 # ==========================================
@@ -304,7 +304,7 @@ elif menu_utama == "🧮 Kalkulator Hitung":
     elif materi == "Iodometri":
         sub_iodo = st.selectbox("Pilih Analisis:", [
             "Standarisasi Natrium Tiosulfat dengan K2Cr2O7",
-            "Penetapan Kadar Klor Aktif (Cl) dalam Pemutih"
+            "Penetapan Kadar Klor Aktif (Cl2) dalam Pemutih"
         ])
         
         if sub_iodo == "Standarisasi Natrium Tiosulfat dengan K2Cr2O7":
@@ -339,8 +339,8 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 </div>
                 """, unsafe_allow_html=True)
 
-        elif sub_iodo == "Penetapan Kadar Klor Aktif (Cl) dalam Pemutih":
-            st.subheader("Hitung Kadar Klor Aktif (Cl)")
+        elif sub_iodo == "Penetapan Kadar Klor Aktif (Cl2) dalam Pemutih":
+            st.subheader("Hitung Kadar Klor Aktif (Cl₂)")
             col_in1, col_in2 = st.columns(2)
             with col_in1:
                 v_sampel = st.number_input("Volume Sampel Pemutih Asal yang Terpipet (mL)", min_value=0.1, value=5.0)
@@ -350,28 +350,25 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 v_titran = st.number_input("Volume Titran Tiosulfat Terpakai (mL)", min_value=0.0, value=15.20)
                 
             if st.button("Hitung Kadar"):
-                # PERBAIKAN: Menggunakan Atom Cl tunggal dibagi valensi 2 (35.453 / 2)
-                ar_cl = 35.453
-                valensi_cl = 2
-                be_cl = ar_cl / valensi_cl  # Hasil: 17.7265
+                be_cl2 = 70.90 / 2  # BE Cl2 = 35.45
                 
                 # Sesuai logika: hitung rasio mEq/V_sampel dulu, dikali fp_internal, dikali 10^-3, baru dikali 100% terakhir
-                rasio_cl = (v_titran * n_tio_std * be_cl) / v_sampel
-                kadar_cl = rasio_cl * n_id_fp * 1e-3 * 100
+                rasio_cl2 = (v_titran * n_tio_std * be_cl2) / v_sampel
+                kadar_cl2 = rasio_cl2 * n_id_fp * 1e-3 * 100
                 
-                # Massa Cl murni (gram)
-                g_cl = (v_titran * n_tio_std * be_cl * n_id_fp) * 1e-3
+                # Massa Cl2 murni (gram)
+                g_cl2 = (v_titran * n_tio_std * be_cl2 * n_id_fp) * 1e-3
                 
                 st.markdown("### Rumus Perhitungan Presisi Kadar:")
-                st.latex(r"\% \, Cl \, (b/v) = \left( \frac{V\_titran \times N_{thio} \times BE_{Cl}}{V\_sampel} \right) \times 10^{-3} \times fp_{int} \times 100\%")
+                st.latex(r"\% \, Cl_2 \, (b/v) = \left( \frac{V\_titran \times N_{thio} \times BE_{Cl_2}}{V\_sampel} \right) \times 10^{-3} \times fp_{int} \times 100\%")
                 
                 st.markdown(f"""
                 <div class="result-box">
                     <h4>Hasil Analisis Eksperimen:</h4>
-                    Massa Cl Aktif Netto = <b>{g_cl:.4f} g</b><br>
-                    Kadar Klor Aktif (Cl) = <b>{kadar_cl:.4f} % (b/v)</b><br><br>
+                    Massa Cl₂ Aktif Netto = <b>{g_cl2:.4f} g</b><br>
+                    Kadar Klor Aktif (Cl₂) = <b>{kadar_cl2:.4f} % (b/v)</b><br><br>
                     <b>Detail Variabel:</b><br>
-                    • BE $Cl$ = <b>{be_cl:.4f}</b> (Berasal dari {ar_cl} / {valensi_cl})<br>
+                    • BE $Cl_2$ = <b>{be_cl2:.2f}</b><br>
                     • Faktor Pengenceran internal ($fp_{{int}}$) = <b>{n_id_fp:.1f}</b>
                 </div>
                 """, unsafe_allow_html=True)
@@ -428,11 +425,3 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 
             if st.button("Hitung Kesadahan"):
                 bm_caco3 = 100.09
-                # Logika lanjutan kesadahan air sisa script kelompok Anda bisa diteruskan di bawah sini
-
-# ==========================================
-# MENU 3: SIMULASI INDIKATOR (Bila dipilih)
-# ==========================================
-elif menu_utama == "🎨 Simulasi Indikator":
-    st.header("🎨 Simulasi Perubahan Warna Indikator")
-    st.write("Modul visualisasi transisi warna titik akhir titrasi.")
