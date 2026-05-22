@@ -70,7 +70,7 @@ with st.sidebar:
     )
     
     st.write("---")
-    st.markdown("<p class='info-text'><b>ChemiCalc v2.1</b><br>Sistem Perhitungan Kuantitatif Standar.</p>", unsafe_allow_html=True)
+    st.markdown("<p class='info-text'><b>ChemiCalc v2.2</b><br>Sistem Perhitungan Kuantitatif Standar.</p>", unsafe_allow_html=True)
 
 # ==========================================
 # MENU 1: HALAMAN UTAMA
@@ -130,7 +130,7 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 be_oksalat = 126.07 / 2  
                 fp = v_labu / v_pipet    
                 
-                # Selesaikan bagian bawah dulu
+                # Selesaikan bagian bawah penyebut dulu secara utuh
                 penyebut = v_titran * be_oksalat * fp
                 n_naoh = mg_baku / penyebut
                 
@@ -162,7 +162,7 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 be_boraks = 381.37 / 2  
                 fp = v_labu / v_pipet
                 
-                # Selesaikan bagian bawah dulu
+                # Selesaikan bagian bawah penyebut dulu secara utuh
                 penyebut = v_titran * be_boraks * fp
                 n_hcl = mg_baku / penyebut
                 
@@ -197,16 +197,21 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                     be_na2co3 = 105.99 / 2
                     be_naoh = 40.00 / 1
                     
-                    g_na2co3 = (2 * (vol_b - vol_a) * n_hcl_std * be_na2co3) / 1000
-                    g_naoh = ((2 * vol_a - vol_b) * n_hcl_std * be_naoh) / 1000
+                    # Hitung rasio mEq terhadap volume sampel terlebih dahulu
+                    rasio_na2co3 = (2 * (vol_b - vol_a) * n_hcl_std * be_na2co3) / v_sampel
+                    rasio_naoh = (((2 * vol_a) - vol_b) * n_hcl_std * be_naoh) / v_sampel
                     
-                    # Hitung rasio massa/volume dulu, dikali 100 paling terakhir
-                    kadar_na2co3 = (g_na2co3 / v_sampel) * 100
-                    kadar_naoh = (g_naoh / v_sampel) * 100
+                    # Konversi mg ke gram (10^-3) dan jadikan % (100) di akhir secara berurutan
+                    kadar_na2co3 = rasio_na2co3 * 1e-3 * 100
+                    kadar_naoh = rasio_naoh * 1e-3 * 100
+                    
+                    # Hitung massa absolut dalam Gram untuk laporan data analitik
+                    g_na2co3 = (2 * (vol_b - vol_a) * n_hcl_std * be_na2co3) * 1e-3
+                    g_naoh = (((2 * vol_a) - vol_b) * n_hcl_std * be_naoh) * 1e-3
                     
                     st.markdown("### Rumus Perhitungan:")
-                    st.latex(r"\% \, Na_2CO_3 = \left( \frac{2 \times (b - a) \times N_{HCl} \times BE_{Na_2CO_3}}{1000 \times V\_sampel} \right) \times 100\%")
-                    st.latex(r"\% \, NaOH = \left( \frac{(2a - b) \times N_{HCl} \times BE_{NaOH}}{1000 \times V\_sampel} \right) \times 100\%")
+                    st.latex(r"\% \, Na_2CO_3 = \left( \frac{2 \times (b - a) \times N_{HCl} \times BE_{Na_2CO_3}}{V\_sampel} \right) \times 10^{-3} \times 100\%")
+                    st.latex(r"\% \, NaOH = \left( \frac{((2a) - b) \times N_{HCl} \times BE_{NaOH}}{V\_sampel} \right) \times 10^{-3} \times 100\%")
                     
                     st.markdown(f"""
                     <div class="result-box">
@@ -244,7 +249,7 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 be_oksalat = 126.07 / 2
                 fp = v_labu / v_pipet
                 
-                # Selesaikan bagian bawah dulu
+                # Selesaikan bagian bawah penyebut dulu secara utuh
                 penyebut = v_titran * be_oksalat * fp
                 n_kmno4 = mg_baku / penyebut
                 
@@ -273,13 +278,15 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 
             if st.button("Hitung Kadar"):
                 be_fe = 55.85
-                g_fe = (v_titran * n_kmno4_std * be_fe) / 1000
                 
-                # Dikali 100 terakhir
-                kadar_fe = (g_fe / v_sampel) * 100
+                # Rasio miliekuivalen zat terhadap volume sampel dikerjakan duluan
+                rasio_fe = (v_titran * n_kmno4_std * be_fe) / v_sampel
+                kadar_fe = rasio_fe * 1e-3 * 100
+                
+                g_fe = (v_titran * n_kmno4_std * be_fe) * 1e-3
                 
                 st.markdown("### Rumus Perhitungan:")
-                st.latex(r"\% \, Fe = \left( \frac{V\_titran \times N_{KMnO_4} \times BE_{Fe}}{1000 \times V\_sampel} \right) \times 100\%")
+                st.latex(r"\% \, Fe = \left( \frac{V\_titran \times N_{KMnO_4} \times BE_{Fe}}{V\_sampel} \right) \times 10^{-3} \times 100\%")
                 
                 st.markdown(f"""
                 <div class="result-box">
@@ -314,7 +321,7 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 be_cr = 294.19 / 6  
                 fp = v_labu / v_pipet
                 
-                # Selesaikan bagian bawah dulu
+                # Selesaikan bagian bawah penyebut dulu secara utuh
                 penyebut = v_titran * be_cr * fp
                 n_tio = mg_baku / penyebut
                 
@@ -336,29 +343,33 @@ elif menu_utama == "🧮 Kalkulator Hitung":
             st.subheader("Hitung Kadar Klor Aktif (Cl₂)")
             col_in1, col_in2 = st.columns(2)
             with col_in1:
-                v_sampel = st.number_input("Volume Sampel Pemutih Terpipet (mL)", min_value=0.1, value=5.0)
+                v_sampel = st.number_input("Volume Sampel Pemutih Asal yang Terpipet (mL)", min_value=0.1, value=5.0)
                 n_id_fp = st.number_input("Faktor Pengenceran internal sampel (jika ada, kalau tidak isi 1)", min_value=1.0, value=1.0)
                 n_tio_std = st.number_input("Normalitas Na₂S₂O₃ Standar (N)", min_value=0.0, value=0.1000, format="%.4f")
             with col_in2:
                 v_titran = st.number_input("Volume Titran Tiosulfat Terpakai (mL)", min_value=0.0, value=15.20)
                 
             if st.button("Hitung Kadar"):
-                be_cl2 = 70.90 / 2  
-                g_cl2 = (v_titran * n_tio_std * be_cl2 * n_id_fp) / 1000
+                be_cl2 = 70.90 / 2  # BE Cl2 = 35.45
                 
-                # Dikali 100 terakhir
-                kadar_cl2 = (g_cl2 / v_sampel) * 100
+                # Sesuai logika: hitung rasio mEq/V_sampel dulu, dikali fp_internal, dikali 10^-3, baru dikali 100% terakhir
+                rasio_cl2 = (v_titran * n_tio_std * be_cl2) / v_sampel
+                kadar_cl2 = rasio_cl2 * n_id_fp * 1e-3 * 100
                 
-                st.markdown("### Rumus Perhitungan:")
-                st.latex(r"\% \, Cl_2 = \left( \frac{V\_titran \times N_{thio} \times BE_{Cl_2} \times fp_{int}}{1000 \times V\_sampel} \right) \times 100\%")
+                # Massa Cl2 murni (gram)
+                g_cl2 = (v_titran * n_tio_std * be_cl2 * n_id_fp) * 1e-3
+                
+                st.markdown("### Rumus Perhitungan Presisi Kadar:")
+                st.latex(r"\% \, Cl_2 \, (b/v) = \left( \frac{V\_titran \times N_{thio} \times BE_{Cl_2}}{V\_sampel} \right) \times 10^{-3} \times fp_{int} \times 100\%")
                 
                 st.markdown(f"""
                 <div class="result-box">
                     <h4>Hasil Analisis Eksperimen:</h4>
-                    Massa Cl₂ Aktif = <b>{g_cl2:.4f} g</b><br>
+                    Massa Cl₂ Aktif Netto = <b>{g_cl2:.4f} g</b><br>
                     Kadar Klor Aktif (Cl₂) = <b>{kadar_cl2:.4f} % (b/v)</b><br><br>
                     <b>Detail Variabel:</b><br>
-                    • BE $Cl_2$ = <b>{be_cl2:.2f}</b>
+                    • BE $Cl_2$ = <b>{be_cl2:.2f}</b><br>
+                    • Faktor Pengenceran internal ($fp_{{int}}$) = <b>{n_id_fp:.1f}</b>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -385,7 +396,7 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 bm_caco3 = 100.09
                 fp = v_labu / v_pipet
                 
-                # Selesaikan bagian bawah dulu
+                # Selesaikan bagian bawah penyebut dulu secara utuh
                 penyebut = v_titran * bm_caco3 * fp
                 m_edta = mg_baku / penyebut
                 
@@ -414,22 +425,3 @@ elif menu_utama == "🧮 Kalkulator Hitung":
                 
             if st.button("Hitung Kesadahan"):
                 bm_caco3 = 100.09
-                g_caco3 = (v_titran * m_edta_std * bm_caco3) / 1000
-                
-                # Dikali 1.000.000 paling terakhir untuk mengubah rasio g/mL ke mg/L (ppm)
-                kesadahan = (g_caco3 / v_sampel) * 1000000
-                
-                st.markdown("### Rumus Perhitungan:")
-                st.latex(r"Kesadahan \, (mg/L) = \left( \frac{V\_titran \times M_{EDTA} \times BM_{CaCO_3}}{1000 \times V\_sampel} \right) \times 1.000.000")
-                
-                st.markdown(f"""
-                <div class="result-box">
-                    <h4>Hasil Analisis Eksperimen:</h4>
-                    Massa ekivalen CaCO₃ = <b>{g_caco3:.5f} g</b><br>
-                    Kesadahan Jumlah = <b>{kesadahan:.2f} mg/L (ppm) CaCO₃</b><br><br>
-                    <b>Detail Variabel:</b><br>
-                    • BM $CaCO_3$ Kesadahan = <b>{bm_caco3:.2f}</b>
-                </div>
-                """, unsafe_allow_html=True)
-
-# =========================================
