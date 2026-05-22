@@ -5,190 +5,381 @@ st.write(
     "Let's start building! For help and inspiration, head over to [docs.streamlit.io](https://docs.streamlit.io/)."
 )
 import streamlit as st
-
-# Konfigurasi Halaman Utama Web
-st.set_page_config(page_title="TitraSmart - Kalkulator & Simulasi Titrasi", page_icon="🧪", layout="wide")
+import pandas as pd
+import numpy as np
 
 # ==========================================
-# SIDEBAR - NAVIGASI UTAMA
+# PAGE CONFIG & CUSTOM THEME (SOFT COLORS)
 # ==========================================
-st.sidebar.title("🧪 TitraSmart")
-st.sidebar.markdown("*Asisten Pintar Kimia Analisis*")
-st.sidebar.markdown("---")
-menu = st.sidebar.radio(
-    "Pilih Menu:",
-    ["Halaman Utama", "Kalkulator Titrasi", "Simulasi Indikator", "Database Reaksi", "Penentuan Kadar (%)"]
+st.set_page_config(
+    page_title="ChemiCalc - Kalkulator Titrimetri",
+    page_icon="🧪",
+    layout="wide"
 )
 
+# Custom CSS untuk warna soft pastel (Mint/Teal lembut & abu-abu terang)
+st.markdown("""
+    <style>
+    .main {
+        background-color: #F8F9FA;
+    }
+    h1, h2, h3 {
+        color: #2C4E4B;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .stTabs [data-baseweb="tab"] {
+        color: #5A737E;
+        font-size: 16px;
+        font-weight: 500;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #439A86 !important;
+        border-bottom-color: #439A86 !important;
+    }
+    div.stButton > button:first-child {
+        background-color: #439A86;
+        color: white;
+        border-radius: 8px;
+        border: none;
+        padding: 8px 20px;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #2C4E4B;
+        color: white;
+    }
+    .result-box {
+        background-color: #EBF7F5;
+        padding: 20px;
+        border-radius: 10px;
+        border-left: 5px solid #439A86;
+        margin-top: 15px;
+    }
+    .color-box {
+        padding: 15px;
+        text-align: center;
+        border-radius: 8px;
+        font-weight: bold;
+        color: #333333;
+        border: 1px solid #E0E0E0;
+        margin-bottom: 15px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # ==========================================
-# 1. HALAMAN UTAMA
+# HEADER UTAMA
 # ==========================================
-if menu == "Halaman Utama":
-    st.title("Selamat Datang di TitraSmart! 👋")
-    st.markdown("""
-    **TitraSmart** adalah platform web interaktif yang dirancang khusus untuk mempermudah perhitungan data praktikum 
-    dan visualisasi simulasi dalam dunia Kimia Analisis. Tidak perlu lagi menghitung rumus rumit secara manual, 
-    cukup masukkan data praktikum Anda dan biarkan TitraSmart bekerja!
+st.title("🧪 ChemiCalc: Perhitungan Otomatis Titrimetri")
+st.write("Aplikasi praktis penentu konsentrasi larutan kerja dan kadar sampel dalam satuan Gram.")
+st.write("---")
+
+# Menu Navigasi Utama
+tab_home, tab_kalkulator, tab_indikator = st.tabs([
+    "🏠 Halaman Utama", 
+    "🧮 Kalkulator Hitung", 
+    "🎨 Simulasi Indikator"
+])
+
+# ==========================================
+# TAB 1: HALAMAN UTAMA
+# ==========================================
+with tab_home:
+    st.header("Selamat Datang di ChemiCalc")
+    st.write("""
+    Aplikasi ini berfungsi sebagai alat bantu digital untuk memverifikasi data perhitungan hasil praktikum kimia analisis kuantitatif (Titrimetri). 
+    Semua parameter perhitungan kadar sampel pada aplikasi ini telah dikonversi secara standar ke dalam satuan **Gram (g)** untuk memastikan kesesuaian pelaporan data analitik.
     """)
     
-    st.subheader("📌 Jenis-Jenis Titrasi & Analisis yang Didukung:")
+    st.subheader("Menu Perhitungan yang Tersedia:")
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown("""
-        * **Titrasi Asam-Basa**: Berdasarkan reaksi netralisasi antara ion $H^+$ dan $OH^-$.
-        * **Permanganometri**: Titrasi redoks menggunakan $KMnO_4$ sebagai autondikator kuat.
-        * **Iodimetri/Iodometri**: Titrasi redoks yang melibatkan iodium ($I_2$) dan indikator amilum.
-        """)
+        st.info("**Asidimetri & Alkalimetri:** Pembakuan NaOH, Pembakuan HCl, dan Kadar Campuran Warder.")
+        st.info("**Permanganometri:** Pembakuan KMnO₄ dan Kadar Besi (Fe).")
     with col2:
-        st.markdown("""
-        * **Argentometri**: Titrasi pengendapan menggunakan ion perak ($Ag^+$), contohnya metode Mohr/Volhard.
-        * **Gravimetri Sederhana**: Analisis kuantitatif berdasarkan pengukuran massa konstan endapan.
-        """)
+        st.info("**Iodometri:** Pembakuan Natrium Tiosulfat dan Kadar Klor Aktif (Cl₂).")
+        st.info("**Kompleksiometri:** Pembakuan EDTA dan Kesadahan Jumlah air.")
+
+# ==========================================
+# TAB 2: FITUR UTAMA - KALKULATOR
+# ==========================================
+with tab_kalkulator:
+    st.header("🧮 Kalkulator Parameter Titrasi")
+    
+    materi = st.selectbox("Pilih Metode Titrasi:", [
+        "Asidimetri & Alkalimetri", 
+        "Permanganometri", 
+        "Iodometri", 
+        "Kompleksiometri"
+    ])
+    
+    st.write("---")
+    
+    # ------------------------------------------
+    # 1. ASIDIMETRI & ALKALIMETRI
+    # ------------------------------------------
+    if materi == "Asidimetri & Alkalimetri":
+        sub_asidi = st.selectbox("Pilih Analisis:", [
+            "Pembakuan NaOH dengan Asam Oksalat",
+            "Pembakuan HCl dengan Boraks",
+            "Penetapan Kadar Campuran Warder (NaOH & Na2CO3)"
+        ])
         
-    st.info("💡 **Tips:** Gunakan menu di sebelah kiri (sidebar) untuk mulai menggunakan fitur kalkulator atau simulasi!")
+        if sub_asidi == "Pembakuan NaOH dengan Asam Oksalat":
+            st.subheader("Hitung Normalitas NaOH")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                mg_baku = st.number_input("Bobot Asam Oksalat dihidrat (mg)", min_value=0.0, value=630.0)
+                v_labu = st.number_input("Volume Labu Takar (mL)", min_value=1.0, value=100.0)
+            with col_in2:
+                v_pipet = st.number_input("Volume Pipet Aliquot (mL)", min_value=1.0, value=25.0)
+                v_titran = st.number_input("Volume Titran NaOH (mL)", min_value=0.01, value=25.0)
+                
+            if st.button("Hitung"):
+                g_baku = mg_baku / 1000  # Konversi mg ke Gram
+                be_oksalat = 126.07 / 2  # g/rek
+                fp = v_labu / v_pipet    # Faktor pengenceran
+                
+                # Rumus baku: N = gram / (V_titran_Liters * BE * (1/fp))
+                n_naoh = g_baku / ((v_titran / 1000) * be_oksalat * (1 / fp))
+                st.markdown(f'<div class="result-box"><h4>Hasil Pembakuan:</h4>Normalitas NaOH = <b>{n_naoh:.4f} N</b></div>', unsafe_allow_html=True)
 
-# ==========================================
-# 2. FITUR 1 - KALKULATOR TITRASI
-# ==========================================
-elif menu == "Kalkulator Titrasi":
-    st.title("🧮 Kalkulator Konsentrasi Titrasi")
-    st.write("Hitung normalitas atau molaritas sampel berdasarkan data volume titrasi.")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Input Data Praktikum")
-        v_titran = st.number_input("Volume Titran / Penitar (mL):", min_value=0.0, value=10.0, step=0.1)
-        n_titran = st.number_input("Normalitas/Molaritas Titran (N atau M):", min_value=0.0, value=0.1000, format="%.4f", step=0.0001)
-        v_sampel = st.number_input("Volume Sampel / Analit (mL):", min_value=0.1, value=10.0, step=0.1)
-    
-    # Rumus dasar titrasi: V1 x N1 = V2 x N2
-    if v_sampel > 0:
-        hasil_konsentrasi = (v_titran * n_titran) / v_sampel
-    else:
-        hasil_konsentrasi = 0.0
+        elif sub_asidi == "Pembakuan HCl dengan Boraks":
+            st.subheader("Hitung Normalitas HCl")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                mg_baku = st.number_input("Bobot Boraks (mg)", min_value=0.0, value=1500.0)
+                v_labu = st.number_input("Volume Labu Takar (mL)", min_value=1.0, value=100.0)
+            with col_in2:
+                v_pipet = st.number_input("Volume Pipet Aliquot (mL)", min_value=1.0, value=25.0)
+                v_titran = st.number_input("Volume Titran HCl (mL)", min_value=0.01, value=25.0)
+                
+            if st.button("Hitung"):
+                g_baku = mg_baku / 1000  # Konversi mg ke Gram
+                be_boraks = 381.37 / 2
+                fp = v_labu / v_pipet
+                
+                n_hcl = g_baku / ((v_titran / 1000) * be_boraks * (1 / fp))
+                st.markdown(f'<div class="result-box"><h4>Hasil Pembakuan:</h4>Normalitas HCl = <b>{n_hcl:.4f} N</b></div>', unsafe_allow_html=True)
 
-    with col2:
-        st.subheader("Hasil Perhitungan")
-        st.metric(label="Konsentrasi Sampel Hasil Titrasi", value=f"{hasil_konsentrasi:.4f} N / M")
+        elif sub_asidi == "Penetapan Kadar Campuran Warder (NaOH & Na2CO3)":
+            st.subheader("Hitung Kadar Campuran Warder")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                v_sampel = st.number_input("Volume Sampel Liquid (mL)", min_value=1.0, value=25.0)
+                n_hcl_std = st.number_input("Normalitas HCl Standar (N)", min_value=0.0, value=0.1000, format="%.4f")
+            with col_in2:
+                vol_a = st.number_input("Volume Titrasi I - Indikator PP (a mL)", min_value=0.0, value=15.0)
+                vol_b = st.number_input("Volume Total Buret - Indikator SM (b mL)", min_value=0.0, value=25.0)
+                
+            if st.button("Hitung Kadar"):
+                if vol_b < vol_a:
+                    st.error("⚠️ Volume b tidak boleh lebih kecil dari volume a!")
+                else:
+                    be_na2co3 = 105.99 / 2
+                    be_naoh = 40.00 / 1
+                    
+                    # Hitung massa komponen langsung dalam satuan Gram (g)
+                    g_na2co3 = (2 * (vol_b - vol_a) * n_hcl_std * be_na2co3) / 1000
+                    g_naoh = ((2 * vol_a - vol_b) * n_hcl_std * be_naoh) / 1000
+                    
+                    # Persen Berat/Volume (% b/v) = (Gram zat / mL Sampel) * 100%
+                    kadar_na2co3 = (g_na2co3 / v_sampel) * 100
+                    kadar_naoh = (g_naoh / v_sampel) * 100
+                    
+                    st.markdown(f"""
+                    <div class="result-box">
+                        <h4>Hasil Analisis Eksperimen:</h4>
+                        <ul>
+                            <li>Massa Na₂CO₃ dalam sampel = <b>{g_na2co3:.4f} g</b></li>
+                            <li>Kadar Na₂CO₃ = <b>{kadar_na2co3:.4f} % (b/v)</b></li>
+                            <hr>
+                            <li>Massa NaOH dalam sampel = <b>{g_naoh:.4f} g</b></li>
+                            <li>Kadar NaOH = <b>{kadar_naoh:.4f} % (b/v)</b></li>
+                        </ul>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+    # ------------------------------------------
+    # 2. PERMANGANOMETRI
+    # ------------------------------------------
+    elif materi == "Permanganometri":
+        sub_permang = st.selectbox("Pilih Analisis:", [
+            "Pembakuan KMnO4 dengan Asam Oksalat",
+            "Penetapan Kadar Besi (Fe) dalam Garam Besi"
+        ])
         
-        st.markdown("**Catatan Rumus:**")
-        st.latex(r"N_{sampel} = \frac{V_{titran} \times N_{titran}}{V_{sampel}}")
+        if sub_permang == "Pembakuan KMnO4 dengan Asam Oksalat":
+            st.subheader("Hitung Normalitas KMnO₄")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                mg_baku = st.number_input("Bobot Asam Oksalat (mg)", min_value=0.0, value=630.0)
+                v_labu = st.number_input("Volume Labu Takar Oksalat (mL)", min_value=1.0, value=100.0)
+            with col_in2:
+                v_pipet = st.number_input("Volume Pipet Aliquot Oksalat (mL)", min_value=1.0, value=25.0)
+                v_titran = st.number_input("Volume Titran KMnO₄ (mL)", min_value=0.01, value=25.0)
+                
+            if st.button("Hitung"):
+                g_baku = mg_baku / 1000
+                be_oksalat = 126.07 / 2
+                fp = v_labu / v_pipet
+                
+                n_kmno4 = g_baku / ((v_titran / 1000) * be_oksalat * (1 / fp))
+                st.markdown(f'<div class="result-box"><h4>Hasil Pembakuan:</h4>Normalitas KMnO₄ = <b>{n_kmno4:.4f} N</b></div>', unsafe_allow_html=True)
 
-# ==========================================
-# 3. FITUR 2 - SIMULASI WARNA INDIKATOR
-# ==========================================
-elif menu == "Simulasi Indikator":
-    st.title("🎨 Simulasi Warna Indikator")
-    st.write("Lihat perubahan warna estetis indikator kimia berdasarkan trayek pH-nya.")
-    
-    indikator = st.selectbox(
-        "Pilih Indikator Asam-Basa:",
-        ["Fenolftalein (PP)", "Metil Merah (MM)", "Metil Jingga (MO)"]
-    )
-    
-    # Logika warna dan pH kerja
-    if indikator == "Fenolftalein (PP)":
-        pH_range = "8.3 - 10.0"
-        sifat_asam = "Bening (Tidak Berwarna)"
-        sifat_basa = "Merah Muda / Pink Tua"
-        hex_asam = "#FFFFFF" # Putih/Bening
-        hex_basa = "#FF69B4" # Hot Pink
-    elif indikator == "Metil Merah (MM)":
-        pH_range = "4.4 - 6.2"
-        sifat_asam = "Merah"
-        sifat_basa = "Kuning"
-        hex_asam = "#FF0000"
-        hex_basa = "#FFFF00"
-    else: # Metil Jingga (MO)
-        pH_range = "3.1 - 4.4"
-        sifat_asam = "Merah"
-        sifat_basa = "Kuning-Jingga"
-        hex_asam = "#FF0000"
-        hex_basa = "#FFA500"
+        elif sub_permang == "Penetapan Kadar Besi (Fe) dalam Garam Besi":
+            st.subheader("Hitung Kadar Besi (Fe)")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                v_sampel = st.number_input("Volume Sampel Larutan Besi (mL)", min_value=1.0, value=25.0)
+                n_kmno4_std = st.number_input("Normalitas KMnO₄ Standar (N)", min_value=0.0, value=0.1000, format="%.4f")
+            with col_in2:
+                v_titran = st.number_input("Volume Titran KMnO₄ Terpakai (mL)", min_value=0.0, value=24.50)
+                
+            if st.button("Hitung Kadar"):
+                be_fe = 55.85 / 1
+                # Hitung berat Fe langsung dalam Gram (g)
+                g_fe = (v_titran * n_kmno4_std * be_fe) / 1000
+                kadar_fe = (g_fe / v_sampel) * 100
+                
+                st.markdown(f"""
+                <div class="result-box">
+                    <h4>Hasil Analisis Eksperimen:</h4>
+                    Massa Fe dalam sampel = <b>{g_fe:.4f} g</b><br>
+                    Kadar Besi (Fe) = <b>{kadar_fe:.4f} % (b/v)</b>
+                </div>
+                """, unsafe_allow_html=True)
 
-    st.subheader(f"Informasi Indikator: {indikator}")
-    st.markdown(f"**Trayek pH Kerja:** {pH_range}")
-    
-    # Representasi Visual Perubahan Warna
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown(f"🟢 **Kondisi Asam (< {pH_range.split(' - ')[0]}):** {sifat_asam}")
-        # Bikin kotak warna pakai HTML/CSS markdown
-        st.markdown(f'<div style="background-color:{hex_asam}; width:100px; height:100px; border:2px solid #ccc; border-radius:10px;"></div>', unsafe_allow_html=True)
+    # ------------------------------------------
+    # 3. IODOMETRI
+    # ------------------------------------------
+    elif materi == "Iodometri":
+        sub_iodo = st.selectbox("Pilih Analisis:", [
+            "Pembakuan Natrium Tiosulfat dengan K2Cr2O7",
+            "Penetapan Kadar Klor Aktif (Cl2) dalam Pemutih"
+        ])
         
-    with c2:
-        st.markdown(f"🔴 **Kondisi Basa (> {pH_range.split(' - ')[1]}):** {sifat_basa}")
-        st.markdown(f'<div style="background-color:{hex_basa}; width:100px; height:100px; border:2px solid #ccc; border-radius:10px;"></div>', unsafe_allow_html=True)
+        if sub_iodo == "Pembakuan Natrium Tiosulfat dengan K2Cr2O7":
+            st.subheader("Hitung Normalitas Na₂S₂O₃")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                mg_baku = st.number_input("Bobot K₂Cr₂O₇ (mg)", min_value=0.0, value=245.0)
+                v_labu = st.number_input("Volume Labu Takar Dikromat (mL)", min_value=1.0, value=100.0)
+            with col_in2:
+                v_pipet = st.number_input("Volume Pipet Aliquot Dikromat (mL)", min_value=1.0, value=25.0)
+                v_titran = st.number_input("Volume Titran Tiosulfat (mL)", min_value=0.01, value=25.0)
+                
+            if st.button("Hitung"):
+                g_baku = mg_baku / 1000
+                be_cr = 294.18 / 6
+                fp = v_labu / v_pipet
+                
+                n_tio = g_baku / ((v_titran / 1000) * be_cr * (1 / fp))
+                st.markdown(f'<div class="result-box"><h4>Hasil Pembakuan:</h4>Normalitas Na₂S₂O₃ = <b>{n_tio:.4f} N</b></div>', unsafe_allow_html=True)
+
+        elif sub_iodo == "Penetapan Kadar Klor Aktif (Cl2) dalam Pemutih":
+            st.subheader("Hitung Kadar Klor Aktif (Cl₂)")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                v_sampel = st.number_input("Volume Sampel Pemutih Terpipet (mL)", min_value=0.1, value=5.0)
+                n_id_fp = st.number_input("Faktor Pengenceran internal sampel (jika ada, kalau tidak isi 1)", min_value=1.0, value=1.0)
+                n_tio_std = st.number_input("Normalitas Na₂S₂O₃ Standar (N)", min_value=0.0, value=0.1000, format="%.4f")
+            with col_in2:
+                v_titran = st.number_input("Volume Titran Tiosulfat Terpakai (mL)", min_value=0.0, value=15.20)
+                
+            if st.button("Hitung Kadar"):
+                be_cl2 = 70.90 / 2
+                # Hitung berat Cl2 langsung dalam Gram (g)
+                g_cl2 = (v_titran * n_tio_std * be_cl2 * n_id_fp) / 1000
+                kadar_cl2 = (g_cl2 / v_sampel) * 100
+                
+                st.markdown(f"""
+                <div class="result-box">
+                    <h4>Hasil Analisis Eksperimen:</h4>
+                    Massa Cl₂ Aktif = <b>{g_cl2:.4f} g</b><br>
+                    Kadar Klor Aktif (Cl₂) = <b>{kadar_cl2:.4f} % (b/v)</b>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # ------------------------------------------
+    # 4. KOMPLEKSIOMETRI
+    # ------------------------------------------
+    elif materi == "Kompleksiometri":
+        sub_kompleks = st.selectbox("Pilih Analisis:", [
+            "Pembakuan EDTA dengan CaCO3",
+            "Penetapan Kesadahan Jumlah dalam Air"
+        ])
+        
+        if sub_kompleks == "Pembakuan EDTA dengan CaCO3":
+            st.subheader("Hitung Molaritas EDTA")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                mg_baku = st.number_input("Bobot CaCO₃ (mg)", min_value=0.0, value=100.0)
+                v_labu = st.number_input("Volume Labu Takar Kalsium (mL)", min_value=1.0, value=100.0)
+            with col_in2:
+                v_pipet = st.number_input("Volume Pipet Aliquot Kalsium (mL)", min_value=1.0, value=25.0)
+                v_titran = st.number_input("Volume Titran EDTA (mL)", min_value=0.01, value=25.0)
+                
+            if st.button("Hitung"):
+                g_baku = mg_baku / 1000
+                bm_caco3 = 100.09
+                fp = v_labu / v_pipet
+                
+                m_edta = g_baku / ((v_titran / 1000) * bm_caco3 * (1 / fp))
+                st.markdown(f'<div class="result-box"><h4>Hasil Pembakuan:</h4>Molaritas EDTA = <b>{m_edta:.4f} M</b></div>', unsafe_allow_html=True)
+
+        elif sub_kompleks == "Penetapan Kesadahan Jumlah dalam Air":
+            st.subheader("Hitung Kesadahan Jumlah (sebagai CaCO₃)")
+            col_in1, col_in2 = st.columns(2)
+            with col_in1:
+                v_sampel = st.number_input("Volume Sampel Air (mL)", min_value=1.0, value=50.0)
+                m_edta_std = st.number_input("Molaritas EDTA Standar (M)", min_value=0.0, value=0.0100, format="%.4f")
+            with col_in2:
+                v_titran = st.number_input("Volume Titran EDTA Terpakai (mL)", min_value=0.0, value=12.40)
+                
+            if st.button("Hitung Kesadahan"):
+                bm_caco3 = 100.09
+                # Hitung berat CaCO3 ekuivalen dalam Gram (g)
+                g_caco3 = (v_titran * m_edta_std * bm_caco3) / 1000
+                
+                # Kesadahan umum dilaporkan dalam ppm (mg/L). 
+                # Hubungannya: (Gram / mL) * 1.000.000 = mg/L
+                kesadahan = (g_caco3 / v_sampel) * 1000000
+                
+                st.markdown(f"""
+                <div class="result-box">
+                    <h4>Hasil Analisis Eksperimen:</h4>
+                    Massa ekivalen CaCO₃ = <b>{g_caco3:.5f} g</b><br>
+                    Kesadahan Jumlah = <b>{kesadahan:.2f} mg/L (ppm) CaCO₃</b>
+                </div>
+                """, unsafe_allow_html=True)
 
 # ==========================================
-# 4. FITUR 4 - DATABASE REAKSI
+# TAB 3: SIMULASI WARNA INDIKATOR
 # ==========================================
-elif menu == "Database Reaksi":
-    st.title("📚 Database Reaksi & Reagen")
-    st.write("Cari informasi lengkap mengenai senyawa/reagen utama yang sering digunakan dalam titrasi.")
+with tab_indikator:
+    st.header("🎨 Simulasi Perubahan Warna Indikator")
+    st.write("Pilih nama indikator untuk melihat warna awal dan warna titik akhir konstan.")
     
-    reagen = st.selectbox(
-        "Pilih Reagen Kimia:",
-        ["KMnO4 (Kalium Permanganat)", "AgNO3 (Perak Nitrat)", "Na2S2O3 (Natrium Tiosulfat)"]
-    )
-    
-    # Kamus data reagen
-    db_reaksi = {
-        "KMnO4 (Kalium Permanganat)": {
-            "fungsi": "Sebagai titran/oksidator kuat pada titrasi Permanganometri. Bersifat autondikator (bisa jadi indikator bagi dirinya sendiri).",
-            "reaksi": r"MnO_4^- + 8H^+ + 5e^- \rightarrow Mn^{2+} + 4H_2O",
-            "perubahan": "Ungu tua (awal titrasi) menjadi Merah Muda Seulas / konstan (titik akhir)."
-        },
-        "AgNO3 (Perak Nitrat)": {
-            "fungsi": "Sebagai titran utama pada titrasi Argentometri (pengendapan) untuk menetapkan kadar halida seperti klorida ($Cl^-$).",
-            "reaksi": r"Ag^+ + Cl^- \rightarrow AgCl \downarrow \text{ (Endapan Putih)}",
-            "perubahan": "Terbentuk endapan putih kusam, dan menjadi merah bata saat berikatan dengan indikator kromat ($K_2CrO_4$)."
-        },
-        "Na2S2O3 (Natrium Tiosulfat)": {
-            "fungsi": "Sebagai larutan standar/reduktor pada titrasi Iodometri (titrasi tidak langsung) untuk menitar Iod yang terbebas.",
-            "reaksi": r"I_2 + 2S_2O_3^{2-} \rightarrow 2I^- + S_4O_6^{2-}",
-            "perubahan": "Biru tua (saat ditambah indikator amilum) menjadi Bening/Tepat Hilang Warna Birunya."
-        }
+    indikator_db = {
+        "Fenolftalein (PP)": {"asam": "Bening / Tidak Berwarna", "basa": "Merah Muda / Pink seulas", "hex_as": "#FFFFFF", "hex_bs": "#FFB7B2"},
+        "Metil Merah (MR)": {"asam": "Merah", "basa": "Kuning", "hex_as": "#FFAAA6", "hex_bs": "#FFF5BA"},
+        "Sindur Metil / Methyl Orange (SM)": {"asam": "Merah", "basa": "Kuning-Jingga", "hex_as": "#FF8B94", "hex_bs": "#FFE3A8"},
+        "Eriochrome Black T (EBT)": {"asam": "Merah Anggur", "basa": "Biru Jernih", "hex_as": "#C39BD3", "hex_bs": "#AED6F1"}
     }
     
-    info = db_reaksi[reagen]
+    pilihan_ind = st.selectbox("Pilih Indikator:", list(indikator_db.keys()))
+    ind_info = indikator_db[pilihan_ind]
     
-    st.subheader(f"🔍 Detail Reagen: {reagen}")
-    st.markdown(f"**💡 Fungsi Utama:**\n{info['fungsi']}")
-    st.markdown("**🧪 Persamaan Reaksi:**")
-    st.latex(info['reaksi'])
-    st.markdown(f"**🔄 Perubahan Warna Titik Akhir:**\n{info['perubahan']}")
-
-# ==========================================
-# 5. FITUR 5 - SIMULASI PENENTUAN KADAR (%)
-# ==========================================
-elif menu == "Penentuan Kadar (%)":
-    st.title("📊 Simulasi Penentuan Kadar Sampel")
-    st.write("Hitung persentase kadar (%) zat analit di dalam sampel padat atau cair.")
-    
-    # Contoh studi kasus Asam Asetat (Cuka)
-    st.info("ℹ️ **Studi Kasus Default:** Penentuan Kadar Asam Asetat ($CH_3COOH$) dalam Cuka Perdagangan menggunakan standar NaOH. (BE Asam Asetat = 60.05)")
-    
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Masukkan Parameter")
-        v_titran_kadar = st.number_input("Volume Titran Terpakai (mL):", min_value=0.0, value=15.2, step=0.1, key="v_kadar")
-        n_titran_kadar = st.number_input("Normalitas Titran (N):", min_value=0.0, value=0.1012, format="%.4f", step=0.0001, key="n_kadar")
-        be_zat = st.number_input("Berat Ekuivalen (BE) / Mr Zat Analit:", min_value=0.1, value=60.05, step=0.01, help="Untuk Asam Asetat = 60.05")
-        massa_sampel = st.number_input("Massa / Volume Sampel (mg atau mL):", min_value=0.1, value=2000.0, step=10.0, help="Jika sampel diencerkan atau ditimbang dalam mg. Contoh: 2000 mg = 2 gram")
-        
-    # Rumus Kadar % = (V x N x BE) / Massa Sampel (mg) * 100%
-    if massa_sampel > 0:
-        kadar = ((v_titran_kadar * n_titran_kadar * be_zat) / massa_sampel) * 100
-    else:
-        kadar = 0.0
-
-    with col2:
-        st.subheader("Hasil Analisis Kadar")
-        st.metric(label="Persentase Kadar Zat (%)", value=f"{kadar:.3f} %")
-        
-        st.markdown("**Rumus yang Digunakan:**")
-        st.latex(r"\%\text{ Kadar} = \frac{V_{titran} \times N_{titran} \times BE}{Massa\ Sampel\ (mg)} \times 100\%")
-        
-        if kadar > 0:
-            st.success(f"Analisis Selesai! Kadar komponen di dalam sampel terdeteksi sebesar **{kadar:.3f}%**.")
+    col_w1, col_w2 = st.columns(2)
+    with col_w1:
+        st.markdown(f"""
+        <div class="color-box" style="background-color: {ind_info['hex_as']};">
+            Warna Sebelum Titik Akhir:<br>{ind_info['asam']}
+        </div>
+        """, unsafe_allow_html=True)
+    with col_w2:
+        st.markdown(f"""
+        <div class="color-box" style="background-color: {ind_info['hex_bs']};">
+            Warna Tepat Saat Titik Akhir:<br>{ind_info['basa']}
+        </div>
+        """, unsafe_allow_html=True)
